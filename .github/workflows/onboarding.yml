@@ -1,0 +1,198 @@
+name: User Onboarding Automation
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  onboarding-org:
+    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, 'onboard org')
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Extract Parameters from Comment
+      id: extract_params
+      run: |
+        # Get the full comment body
+        comment_body="${{ github.event.comment.body }}"
+
+        # Check if the command contains direct params (-organizations) or if it's CSV-based onboarding
+        if echo "$comment_body" | grep -q '\-organizations'; then
+          # Extract organizations, usernames, and role from the comment body using regex
+          organizations=$(echo "$comment_body" | grep -oP '(?<=-organizations\s)[^ ]+')
+          usernames=$(echo "$comment_body" | grep -oP '(?<=-usernames\s)[^ ]+')
+          role=$(echo "$comment_body" | grep -oP '(?<=-role\s)[^ ]+')
+
+          echo "Extracted Organizations: $organizations"
+          echo "Extracted Usernames: $usernames"
+          echo "Extracted Role: $role"
+
+          if [ -z "$organizations" ] || [ -z "$usernames" ] || [ -z "$role" ]; then
+            echo "Error: One or more required fields are empty for direct parameters."
+            exit 1
+          fi
+
+          # Set environment variables for direct parameters case
+          echo "ORGANIZATIONS=$organizations" >> $GITHUB_ENV
+          echo "USERNAMES=$usernames" >> $GITHUB_ENV
+          echo "ROLE=$role" >> $GITHUB_ENV
+          echo "COMMAND_TYPE=direct_params" >> $GITHUB_ENV
+
+        else
+          # Extract the CSV file name for organization onboarding
+          csv_file=$(echo "$comment_body" | grep -oP '(?<=onboard org\s)[^ ]+')
+
+          echo "Extracted CSV File: $csv_file"
+
+          if [ -z "$csv_file" ]; then
+            echo "Error: CSV file is empty. Exiting."
+            exit 1
+          fi
+
+          # Append .csv if necessary
+          if [[ ! "$csv_file" =~ \.csv$ ]]; then
+            csv_file="${csv_file}.csv"
+          fi
+
+          # Set environment variables for CSV case
+          echo "CSV_FILE=$csv_file" >> $GITHUB_ENV
+          echo "COMMAND_TYPE=csv_file" >> $GITHUB_ENV
+        fi
+
+    - name: Check and debug the extracted parameters
+      run: |
+        echo "Organizations: $ORGANIZATIONS"
+        echo "Usernames: $USERNAMES"
+        echo "Role: $ROLE"
+        echo "CSV File: $CSV_FILE"
+        echo "Command Type: $COMMAND_TYPE"
+
+    - name: Check GITHUB_TOKEN
+      run: |
+        if [ -z "$GITHUB_TOKEN" ]; then
+          echo "Error: GITHUB_TOKEN is not set!"
+          exit 1
+        else
+          echo "GITHUB_TOKEN is available."
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.MYPAT }}
+
+    - name: Run Organization Onboarding Script
+      run: |
+        if [[ "$COMMAND_TYPE" == "direct_params" ]]; then
+          echo "Running Organization Onboarding with Direct Parameters..."
+          pwsh -File ./scripts/onboarding.ps1 -organizations "$ORGANIZATIONS" -usernames "$USERNAMES" -role "$ROLE"
+        elif [[ "$COMMAND_TYPE" == "csv_file" ]]; then
+          echo "Running Organization Onboarding with CSV File..."
+          pwsh -File ./scripts/onboarding.ps1 -filePath "./${CSV_FILE}"
+        else
+          echo "Error: Invalid COMMAND_TYPE"
+          exit 1
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.MYPAT }}
+        ORGANIZATIONS: ${{ env.ORGANIZATIONS }}
+        USERNAMES: ${{ env.USERNAMES }}
+        ROLE: ${{ env.ROLE }}
+        CSV_FILE: ${{ env.CSV_FILE }}
+        COMMAND_TYPE: ${{ env.COMMAND_TYPE }}
+
+  onboarding-repo:
+    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, 'onboard repo')
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Extract Parameters from Comment
+      id: extract_params
+      run: |
+        # Get the full comment body
+        comment_body="${{ github.event.comment.body }}"
+
+        # Check if the command contains direct params (-repo) or if it's CSV-based onboarding
+        if echo "$comment_body" | grep -q '\-repo'; then
+          # Extract repos, usernames, and permission from the comment body using regex
+          repos=$(echo "$comment_body" | grep -oP '(?<=-repo\s)[^ ]+')
+          usernames=$(echo "$comment_body" | grep -oP '(?<=-usernames\s)[^ ]+')
+          permission=$(echo "$comment_body" | grep -oP '(?<=-permission\s)[^ ]+')
+
+          echo "Extracted Repos: $repos"
+          echo "Extracted Usernames: $usernames"
+          echo "Extracted Permission: $permission"
+
+          if [ -z "$repos" ] || [ -z "$usernames" ] || [ -z "$permission" ]; then
+            echo "Error: One or more required fields are empty for direct parameters."
+            exit 1
+          fi
+
+          # Set environment variables for direct parameters case
+          echo "REPOS=$repos" >> $GITHUB_ENV
+          echo "USERNAMES=$usernames" >> $GITHUB_ENV
+          echo "PERMISSION=$permission" >> $GITHUB_ENV
+          echo "COMMAND_TYPE=direct_params" >> $GITHUB_ENV
+
+        else
+          # Extract the CSV file name for repository onboarding
+          csv_file=$(echo "$comment_body" | grep -oP '(?<=onboard repo\s)[^ ]+')
+
+          echo "Extracted CSV File: $csv_file"
+
+          if [ -z "$csv_file" ]; then
+            echo "Error: CSV file is empty. Exiting."
+            exit 1
+          fi
+
+          # Append .csv if necessary
+          if [[ ! "$csv_file" =~ \.csv$ ]]; then
+            csv_file="${csv_file}.csv"
+          fi
+
+          # Set environment variables for CSV case
+          echo "CSV_FILE=$csv_file" >> $GITHUB_ENV
+          echo "COMMAND_TYPE=csv_file" >> $GITHUB_ENV
+        fi
+
+    - name: Check and debug the extracted parameters
+      run: |
+        echo "Repos: $REPOS"
+        echo "Usernames: $USERNAMES"
+        echo "Permission: $PERMISSION"
+        echo "CSV File: $CSV_FILE"
+        echo "Command Type: $COMMAND_TYPE"
+
+    - name: Check GITHUB_TOKEN
+      run: |
+        if [ -z "$GITHUB_TOKEN" ]; then
+          echo "Error: GITHUB_TOKEN is not set!"
+          exit 1
+        else
+          echo "GITHUB_TOKEN is available."
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.MYPAT }}
+
+    - name: Run Repository Access Script
+      run: |
+        if [[ "$COMMAND_TYPE" == "direct_params" ]]; then
+          echo "Running Repository Onboarding with Direct Parameters..."
+          pwsh -File ./scripts/repo_access.ps1 -repo "$REPOS" -usernames "$USERNAMES" -permission "$PERMISSION"
+        elif [[ "$COMMAND_TYPE" == "csv_file" ]]; then
+          echo "Running Repository Onboarding with CSV File..."
+          pwsh -File ./scripts/repo_access.ps1 -filePath "./${CSV_FILE}"
+        else
+          echo "Error: Invalid COMMAND_TYPE"
+          exit 1
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.MYPAT }}
+        REPOS: ${{ env.REPOS }}
+        USERNAMES: ${{ env.USERNAMES }}
+        PERMISSION: ${{ env.PERMISSION }}
+        CSV_FILE: ${{ env.CSV_FILE }}
+        COMMAND_TYPE: ${{ env.COMMAND_TYPE }}
