@@ -1,0 +1,4 @@
+Repository,username,permission
+Jenkins_1,user1,read
+Jenkins_1,user2,admin
+Train,user3,write
