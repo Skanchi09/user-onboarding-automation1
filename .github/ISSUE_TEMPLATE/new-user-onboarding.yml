@@ -1,0 +1,87 @@
+name: "User Onboarding"
+description: "Template for onboarding new users into the organization."
+title: "Onboard new users to organization"
+labels: 
+  - "onboarding to repo and org"
+body:
+  - type: dropdown
+    id: onboarding_type
+    attributes:
+      label: "Please follow the instructions below"
+      description: "Select the type of onboarding you require:"
+      options: 
+        - "Repository Access (`onboard repo`)"
+        - "Organization Access (`onboard org`)"
+  - type: dropdown
+    id: Parameters-Type
+    attributes:
+      label: "Please follow the instructions below"
+      description: "Select the type through which instructions provided:"
+      options: 
+        - "CSV file"
+        - "Direct Parameters"
+        
+  - type: markdown
+    attributes:
+      value: |
+        ## Instructions for Onboarding through Direct Parameters
+
+        Based on your selection, please provide the necessary details in the comments.
+
+        ### If you selected **Repository Access**:
+        - **Repositories** (Comma-separated list):  
+          Example: `repo1, repo2`
+          
+        - **Usernames** (Comma-separated list):  
+          Example: `username1, username2`
+          
+        - **Permission Level** (read/write/admin):  
+          Example: `read`
+
+        ### If you selected **Organization Access**:
+        - **Organizations** (Comma-separated list):  
+          Example: `org1, org2`
+          
+        - **Usernames** (Comma-separated list):  
+          Example: `username1, username2`
+          
+        - **Role** (admin/direct_member/billing_manager):  
+          Example: `admin`
+          
+        ### **Sample Commands**
+        - For Repository Onboarding:
+          ```bash
+          onboard repo -repo repo1,repo2 -usernames username1,username2 -role read
+          ```
+
+        - For Organization Onboarding:
+          ```bash
+          onboard org -organizations org1,org2 -usernames username1,username2 -role admin
+          ```
+  - type: markdown
+    attributes:
+      value: |
+        ## Instructions for Onboarding through .CSV file
+
+        Based on your selection, please provide the necessary details in the comments.
+
+        ### If you selected **Repository Access**:
+        - **Repositories.csv** (.CSV file):  
+          Example: `repo.csv or mannequin.csv`
+          
+        ### If you selected **Organization Access**:
+        - **Organizations.csv** (.CSV file):  
+          Example: `org.csv or mannequin.csv`
+            
+        ### **Sample Commands**
+        - For Repository Onboarding:
+          ```bash
+          onboard repo repo.csv
+          ```
+
+        - For Organization Onboarding:
+          ```bash
+          onboard org org.csv
+          ```
+        ### **Next Steps**
+        Once you've provided the necessary details, the onboarding process will start automatically. Please ensure all fields are filled out correctly to avoid delays.
